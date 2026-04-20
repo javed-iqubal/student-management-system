@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/javed-iqubal/student-management-system/internal/storage"
@@ -50,5 +51,31 @@ func New(storage storage.Storage) http.HandlerFunc {
 		slog.Info("Student created successfuly", slog.String("id", fmt.Sprint(lastId)))
 
 		response.WriteJson(w, http.StatusCreated, map[string]int64{"id": lastId})
+	}
+}
+
+func GetById(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		id := r.PathValue("id")
+		slog.Info("Getting a student", slog.String("id", fmt.Sprint(id)))
+
+		id64, err := strconv.ParseInt(id, 10, 64)
+
+		if err != nil {
+			slog.Info("Invalid student id", slog.String("error ", err.Error()))
+			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
+			return
+		}
+
+		student, err := storage.GetStudentById(id64)
+		if err != nil {
+			slog.Error("Error getting student", slog.String("id", id))
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+
+		response.WriteJson(w, http.StatusOK, student)
+
 	}
 }
