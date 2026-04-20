@@ -54,7 +54,7 @@ func New(storage storage.Storage) http.HandlerFunc {
 	}
 }
 
-func GetById(storage storage.Storage) http.HandlerFunc {
+func GetStudentById(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		id := r.PathValue("id")
@@ -63,19 +63,36 @@ func GetById(storage storage.Storage) http.HandlerFunc {
 		id64, err := strconv.ParseInt(id, 10, 64)
 
 		if err != nil {
-			slog.Info("Invalid student id", slog.String("error ", err.Error()))
+			slog.Error("Invalid student id", "error ", err.Error())
 			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
 			return
 		}
 
 		student, err := storage.GetStudentById(id64)
 		if err != nil {
-			slog.Error("Error getting student", slog.String("id", id))
+			slog.Error("failed to process te request", "error", err.Error())
 			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
 			return
 		}
 
 		response.WriteJson(w, http.StatusOK, student)
+
+	}
+}
+
+func GetStudentList(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		slog.Info("Getting a student list")
+
+		students, err := storage.GetStudentList()
+		if err != nil {
+			slog.Error("failed to process the request", "error", err.Error())
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+
+		response.WriteJson(w, http.StatusOK, students)
 
 	}
 }
