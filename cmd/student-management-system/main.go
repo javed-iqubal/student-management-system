@@ -13,6 +13,7 @@ import (
 
 	"github.com/javed-iqubal/student-management-system/internal/config"
 	"github.com/javed-iqubal/student-management-system/internal/http/handler/student"
+	"github.com/javed-iqubal/student-management-system/internal/storage/sqlite"
 )
 
 func main() {
@@ -21,13 +22,19 @@ func main() {
 
 	cfg := config.MustLoad()
 
-	// Database setup
+	//Database setup
+	storage, err := sqlite.New(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	slog.Info("Storage initialized ", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
 
 	// Setup Router
 
 	router := http.NewServeMux()
 
-	router.HandleFunc("POST /api/students", student.New())
+	router.HandleFunc("POST /api/students", student.New(storage))
 	// Setup Server
 
 	server := http.Server{
@@ -44,7 +51,7 @@ func main() {
 	go func() {
 		err := server.ListenAndServe()
 		if err != nil {
-			log.Fatal("Failed to start server")
+			log.Fatal("Failed to start server", err)
 		}
 	}()
 
